@@ -30,14 +30,6 @@ pub fn least_squared_approximation(kernel_matrix: &Matrix, y: &Vector) -> Result
     }
 }
 
-pub fn combine_regression_kernel(kernel_a: &Matrix, kernel_b: &Matrix, fx_a: &Vector, fx_b: &Vector) -> (Matrix, Vector) {
-    let fx = fx_a.append_Vector(&fx_b);
-    let mut kernel = kernel_a.append_Matrix(&Matrix::zeros(kernel_b.row, kernel_a.col), 0).unwrap();
-    kernel = kernel.append_Matrix(&Matrix::zeros(kernel_a.row, kernel_b.col).append_Matrix(&kernel_b, 0).unwrap(), 1).unwrap();
-    
-    (kernel, fx)
-}
-
 /// Return a tuple that contains the kernel matrix which can be applied to **least_squared_approximation()**,
 /// and the vector ***y***.
 ///
@@ -83,7 +75,7 @@ pub fn polynomial_regression(x: &Vector, y: &Vector, degree: usize) -> Result<Ve
 
 /// Return a tuple that contains the kernel matrix which can be applied to **least_squared_approximation()**,
 /// and the vector ***f(x) = ln(y)***.
-/// 
+///
 /// Size of kernel matrix : x.size x 2.
 ///
 /// The coefficients vector after **least_squared_approximation()** is [[***ln(c), a***]],
@@ -126,7 +118,7 @@ pub fn exponential_regression(x: &Vector, y: &Vector) -> Result<Vector, String> 
 /// and the vector ***fx = ln(y^2)***.
 ///
 /// Size of kernel matrix : x.size x 2.
-/// 
+///
 /// The coefficients vector after **least_squared_approximation()** is [[***2 * ln(a), 1/c^2***]],
 /// such that
 ///  
@@ -152,7 +144,7 @@ pub fn gaussian_1d_kernel(x: &Vector, y: &Vector) -> Result<(Matrix, Vector), St
     for e in 0..fx.size {
         fx.entries[e] = 2.0 * fx.entries[e].ln();
     }
-    
+
     Ok((kernel_matrix, fx))
 }
 

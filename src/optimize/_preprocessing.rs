@@ -1,6 +1,6 @@
 use crate::vector::Vector;
 
-pub fn normalize(data: &Vector) -> Vector{
+pub fn normalize(data: &Vector) -> Vector {
     if data.size == 0 {
         return data.clone();
     }
@@ -14,8 +14,7 @@ pub fn normalize(data: &Vector) -> Vector{
             max = data.entries[e];
         }
     }
-    data.display();
-    println!("{max} {min}");
+
     let mut norm_data: Vector = data.clone();
     let denominator: f64 = max - min;
     for e in 0..norm_data.size {

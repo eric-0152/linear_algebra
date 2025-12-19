@@ -487,20 +487,7 @@ impl Matrix {
                 "Input Error: The row size of permutation matrix does not match".to_string(),
             );
         }
-        let mut result_matrix: Matrix = self.clone();
-        let mut order: Matrix = permutation.clone();
-        for r in 0..order.row {
-            if order.entries[r][r] != 1.0 {
-                for bottom_r in (r + 1)..order.row {
-                    if order.entries[bottom_r][r] == 1.0 {
-                        order = order.swap_row(r, bottom_r).unwrap();
-                        result_matrix = result_matrix.swap_row(r, bottom_r).unwrap();
-                    }
-                }
-            }
-        }
-
-        Ok(result_matrix)
+        Ok(permutation.multiply_Matrix(self).unwrap())
     }
 
     /// Return
@@ -716,7 +703,7 @@ impl Matrix {
     pub fn calculate_square_error(self: &Self, matrix: &Matrix) -> Result<f64, String> {
         if self.row != matrix.row || self.col != matrix.col {
             return Err("Input Error: The size of input matrix does not match.".to_string());
-        } 
+        }
 
         let mut error: f64 = 0.0;
         for r in 0..self.row {
@@ -740,6 +727,19 @@ impl Matrix {
         result_matrix
     }
 
+    pub fn replace_nan(self: &Self) -> Matrix {
+        let mut result_matrix = self.clone();
+        for r in 0..result_matrix.row {
+            for c in 0..result_matrix.col {
+                if result_matrix.entries[r][c].is_nan() {
+                    result_matrix.entries[r][c] = 0.0;
+                }
+            }
+        }
+
+        result_matrix
+    }
+
     /// Return the matrix that took power of 2 on each element.
     pub fn to_powi(self: &Self, power: i32) -> Matrix {
         let mut result_matrix: Matrix = self.clone();
@@ -753,7 +753,7 @@ impl Matrix {
     }
 
     /// Return the upper triangular form of self.
-    /// 
+    ///
     /// Eliminate those elements which lay in lower triangular.
     pub fn eliminate_lower_triangular(self: &Self) -> Matrix {
         let mut result_matrix: Matrix = self.clone();
@@ -768,7 +768,7 @@ impl Matrix {
     }
 
     /// Return the lower triangular form of self.
-    /// 
+    ///
     /// Eliminate those elements which lay in upper triangular.
     pub fn eliminate_upper_triangular(self: &Self) -> Matrix {
         let mut result_matrix: Matrix = self.clone();
@@ -784,27 +784,28 @@ impl Matrix {
 
     /// Return a matrix only contains the diagonal entries.
     pub fn take_diagonal_entries(self: &Self) -> Matrix {
-        self.eliminate_lower_triangular().eliminate_upper_triangular()
+        self.eliminate_lower_triangular()
+            .eliminate_upper_triangular()
     }
 
     /// Return a matrix only contains the diagonal entries.
-    /// 
+    ///
     /// Parameter row is start from 0.
     pub fn take_row(self: &Self, row: usize) -> Result<Vector, String> {
-       if row >= self.row {
+        if row >= self.row {
             return Err("Input Error: Parameter row is out of bound.".to_string());
-       }
-       
-       Ok(Vector::from_vec(&self.entries[row]))
+        }
+
+        Ok(Vector::from_vec(&self.entries[row]))
     }
 
     /// Return a matrix only contains the diagonal entries.
-    /// 
+    ///
     /// Parameter col is start from 0.
     pub fn take_col(self: &Self, col: usize) -> Result<Vector, String> {
         if col >= self.col {
             return Err("Input Error: Parameter col is out of bound.".to_string());
-       }
+        }
 
         let mut result_vector: Vec<f64> = Vec::new();
         for r in 0..self.row {

@@ -30,5 +30,4 @@ impl Matrix {
 
         Ok(orthonormal_matrix)
     }
-
 }

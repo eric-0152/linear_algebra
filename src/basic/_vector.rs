@@ -144,7 +144,7 @@ impl Vector {
             result_vector.entries.push(vector.entries[e]);
         }
         result_vector.size += vector.size;
-        
+
         result_vector
     }
 
@@ -187,6 +187,30 @@ impl Vector {
         result_Vector.entries[b] = self.entries[a];
 
         Ok(result_Vector)
+    }
+
+    /// Swap the element according to the order of permutaion matrix.
+    pub fn swap_with_permutation(self: &Self, permutation: &Matrix) -> Result<Vector, String> {
+        if self.size != permutation.row {
+            return Err(
+                "Input Error: The row size of permutation matrix does not match".to_string(),
+            );
+        }
+
+        let mut result_vector: Vector = self.clone();
+        let mut order: Matrix = permutation.clone();
+        for r in 0..order.row {
+            if order.entries[r][r] != 1.0 {
+                for bottom_r in (r + 1)..order.row {
+                    if order.entries[bottom_r][r] == 1.0 {
+                        order = order.swap_row(r, bottom_r).unwrap();
+                        result_vector = result_vector.swap_element(r, bottom_r).unwrap();
+                    }
+                }
+            }
+        }
+
+        Ok(result_vector)
     }
 
     /// Add two vector element-wise.
@@ -285,11 +309,23 @@ impl Vector {
     }
 
     pub fn square_root(self: &Self) -> Vector {
-        let mut result_matrix: Vector = self.clone();
+        let mut result_vector: Vector = self.clone();
         for e in 0..self.size {
-            result_matrix.entries[e] = result_matrix.entries[e].sqrt();
+            result_vector.entries[e] = result_vector.entries[e].sqrt();
         }
 
-        result_matrix
+        result_vector
+    }
+
+        pub fn replace_nan(self: &Self) -> Vector {
+        let mut result_vector: Vector = self.clone();
+        for e in 0..result_vector.size {
+            if result_vector.entries[e].is_nan() {
+                result_vector.entries[e] = 0.0;
+            
+            }
+        }
+
+        result_vector
     }
 }

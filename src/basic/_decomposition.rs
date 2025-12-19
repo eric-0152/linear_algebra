@@ -1,51 +1,12 @@
 use crate::matrix::Matrix;
 use crate::vector::Vector;
 
-
 /// For shift_qr_algorithm
 fn similar_matrix(matrix: &Matrix) -> Result<Matrix, String> {
     match matrix.qr_decomposition() {
-        Ok(tuple) => {
-            Ok(tuple.1.multiply_Matrix(&tuple.0).unwrap())
-        }
+        Ok(tuple) => Ok(tuple.1.multiply_Matrix(&tuple.0).unwrap()),
 
-        Err(error_msg) => {
-            Err(error_msg)
-        }
-    }
-}
-
-/// For SVD
-fn shift_qr_algorithm(matrix: &Matrix, max_iter: i32, error_thershold: f64) -> Result<(Vector, f64), String> {
-    match similar_matrix(matrix) {
-        Ok(mut matrix_s) => {
-            let last_row_idx: usize = matrix_s.row - 1;
-            let last_col_idx: usize = matrix_s.col - 1;
-            let matrix_size: usize = matrix_s.row;
-            let mut shift: Matrix = Matrix::zeros(0, 0);
-            let mut last_eigenvalue: f64 = matrix_s.entries[last_row_idx][last_col_idx];
-            let mut difference: f64 = 1.0;
-            let mut step: i32 = 0;
-            while difference > error_thershold && step < max_iter {
-                shift = Matrix::identity(matrix_size). multiply_scalar(&last_eigenvalue);
-                matrix_s = matrix_s.substract_Matrix(&shift).unwrap();
-                matrix_s = similar_matrix(&matrix_s).unwrap().add_Matrix(&shift).unwrap();
-                difference = (matrix_s.entries[last_row_idx][last_col_idx] - last_eigenvalue).abs();
-                last_eigenvalue = matrix_s.entries[last_row_idx][last_col_idx];
-                step += 1;
-            }
-
-            let mut eigenvalue: Vec<f64> = Vec::new();
-            for d in 0..matrix_s.row {
-                eigenvalue.push(matrix_s.entries[d][d]);
-            }
-
-            Ok((Vector::from_vec(&eigenvalue), difference))
-        }
-
-        Err(error_msg) => {
-            Err(error_msg)
-        }
+        Err(error_msg) => Err(error_msg),
     }
 }
 
@@ -198,7 +159,7 @@ impl Matrix {
     /// matrix contains inner products with ***A***.
     pub fn qr_decomposition(self: &Self) -> Result<(Matrix, Matrix), String> {
         match self.gram_schmidt() {
-            Ok(matrix_q) => {
+            Ok(mut matrix_q) => {
                 let mut matrix_r: Matrix = Matrix::zeros(self.col, self.col);
                 for r in 0..matrix_r.row {
                     let orthonormal_col: Vector = matrix_q.get_column_vector(r).unwrap();
@@ -210,99 +171,11 @@ impl Matrix {
                             .unwrap();
                     }
                 }
-
-                Ok((matrix_q, matrix_r))
+                
+                Ok((matrix_q.replace_nan(), matrix_r.replace_nan()))
             }
 
             Err(error_msg) => Err(error_msg),
-        }
-    }
-
-    /// # NEED TO FIX
-    /// Return a tuple (***U, Σ, V^T***).
-    ///
-    /// <br>
-    ///
-    /// ### *SVD* Decomposition:
-    /// &emsp; ***A*** = ***UΣV^T***.
-    /// 
-    /// Using Biorthogonalization SVD
-    pub fn singular_value_decomposition(self: &Self) -> Result<(Matrix, Matrix, Matrix), String> {
-        let mut matrix_a = self.clone();
-        if matrix_a.col > matrix_a.row {
-            matrix_a = matrix_a.multiply_Matrix(&matrix_a.transpose()).unwrap();
-        } else {
-            matrix_a = matrix_a.transpose().multiply_Matrix(&matrix_a).unwrap();
-        }
-
-        let mut matrix_q: Matrix = Self::random_matrix(matrix_a.col, matrix_a.row, -1.0, 1.0);
-        let mut tuple: (Matrix, Matrix) = matrix_q.qr_decomposition().unwrap();
-        matrix_q = tuple.0;
-        let mut matrix_r: Matrix = tuple.1;
-        let mut previous_q: Matrix = matrix_q.clone();
-        let mut step: i32 = 0;
-        let mut difference: f64 = 1.0;
-        while difference > 1e-32 && step < 10000 {
-            step += 1;
-            difference = 0.0;
-
-            let matrix_z: Matrix = matrix_a.multiply_Matrix(&matrix_q).unwrap();
-            tuple = matrix_z.qr_decomposition().unwrap();
-            matrix_q = tuple.0;
-            matrix_r = tuple.1;
-            difference = matrix_q.calculate_square_error(&previous_q).unwrap();
-            previous_q = matrix_q.clone();
-        }
-
-        let mut matrix_s: Matrix = matrix_r.take_diagonal_entries().square_root();
-        if self.row > self.col {
-            let inverse_s: Matrix = matrix_s.inverse().unwrap();
-            matrix_s = matrix_s.append_Matrix(&Matrix::zeros(self.row - self.col, self.col), 0).unwrap();
-            let matrix_v_t: Matrix = matrix_q.transpose().clone();
-            let matrix_u: Matrix = self.multiply_Matrix(&matrix_v_t.transpose()).unwrap().multiply_Matrix(&inverse_s).unwrap();
-            
-            return Ok((matrix_u, matrix_s, matrix_v_t));
-        } else if self.row == self.col {
-            let matrix_v_t: Matrix = matrix_q.transpose().clone();
-            let matrix_u: Matrix = matrix_q.transpose().clone();
-            matrix_s = matrix_s.to_powi(2);
-
-            return Ok((matrix_u, matrix_s, matrix_v_t));
-        } else {
-            let inverse_s: Matrix = matrix_s.inverse().unwrap();
-            matrix_s = matrix_s.append_Matrix(&Matrix::zeros(self.row, self.col - self.row), 1).unwrap();
-            let matrix_u: Matrix = matrix_q.transpose().clone();
-            let matrix_v_t: Matrix = inverse_s.multiply_Matrix(&matrix_u.transpose()).unwrap().multiply_Matrix(&self).unwrap();
-        
-            return Ok((matrix_u, matrix_s, matrix_v_t));
-        }
-    }
-
-    /// # NEED TO FIX
-    /// Return a tuple (***U, Σ, V^T***).
-    ///
-    /// <br>
-    ///
-    /// ### *SVD* Decomposition:
-    /// &emsp; ***A*** = ***UΣV^T***.
-    /// 
-    /// Using Biorthogonalization SVD
-    pub fn singular_value_decomposition_test(self: &Self) -> Result<(Matrix, Matrix, Matrix), String> {
-        let mut matrix_a: Matrix = self.clone();
-        match shift_qr_algorithm(&matrix_a, 1000, 1e-16) {
-            Ok(tuple) => {
-                let mut eigenvalue: Vector = tuple.0;
-                let mut matrix_eigenvalue: Matrix = eigenvalue.to_diagonal();
-                let mut matrix_sigma: Matrix = eigenvalue.square_root().to_diagonal();
-                let matrix_u: Matrix = matrix_a.multiply_Matrix(&matrix_a.transpose()).unwrap();
-                let matrix_v_t: Matrix = matrix_a.transpose().multiply_Matrix(&matrix_a).unwrap();
-
-                Ok((matrix_u, matrix_sigma, matrix_v_t))
-            }
-
-            Err(error_msg) => {
-                Err(error_msg)
-            }
         }
     }
 }

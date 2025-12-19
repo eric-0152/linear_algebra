@@ -2,7 +2,7 @@ use crate::matrix::Matrix;
 
 impl Matrix {
     /// Return the matrix after rotation.
-    /// 
+    ///
     /// Paramter i,j start from zero.
     pub fn givens_rotation(self: &Self, i: usize, j: usize, angle: f64) -> Result<Matrix, String> {
         if i >= self.row || j >= self.row {
