@@ -16,12 +16,12 @@ pub fn least_squared_approximation(kernel_matrix: &Matrix, y: &Vector) -> Result
         .inverse();
 
     match result {
-        Err(error_msg) =>  Err(error_msg),
+        Err(error_msg) => Err(error_msg),
         Ok(inverse) => Ok(inverse
             .multiply_Matrix(&transposed_matrix)
             .unwrap()
             .multiply_Vector(y)
-            .unwrap())
+            .unwrap()),
     }
 }
 
@@ -62,8 +62,8 @@ pub fn polynomial_regression(x: &Vector, y: &Vector, degree: usize) -> Result<Ve
         Err(error_msg) => Err(error_msg),
         Ok(tuple) => match least_squared_approximation(&tuple.0, &tuple.1) {
             Err(error_msg) => Err(error_msg),
-            Ok(coefficients) => Ok(coefficients)
-        }
+            Ok(coefficients) => Ok(coefficients),
+        },
     }
 }
 
@@ -100,12 +100,10 @@ pub fn exponential_kernel(x: &Vector, y: &Vector) -> Result<(Matrix, Vector), St
 pub fn exponential_regression(x: &Vector, y: &Vector) -> Result<Vector, String> {
     match exponential_kernel(x, y) {
         Err(error_msg) => Err(error_msg),
-        Ok(tuple) => {
-            match least_squared_approximation(&tuple.0, &tuple.1) {
-                Err(error_msg) => Err(error_msg),
-                Ok(coefficients) => Ok(coefficients)
-            }
-        }
+        Ok(tuple) => match least_squared_approximation(&tuple.0, &tuple.1) {
+            Err(error_msg) => Err(error_msg),
+            Ok(coefficients) => Ok(coefficients),
+        },
     }
 }
 
@@ -150,11 +148,9 @@ pub fn gaussian_1d_kernel(x: &Vector, y: &Vector) -> Result<(Matrix, Vector), St
 pub fn gaussian_1d_regression(x: &Vector, y: &Vector) -> Result<Vector, String> {
     match gaussian_1d_kernel(x, y) {
         Err(error_msg) => Err(error_msg),
-        Ok(tuple) => {
-            match least_squared_approximation(&tuple.0, &tuple.1) {
-                Err(error_msg) => Err(error_msg),
-                Ok(coefficients) => Ok(coefficients)
-            }
-        }
+        Ok(tuple) => match least_squared_approximation(&tuple.0, &tuple.1) {
+            Err(error_msg) => Err(error_msg),
+            Ok(coefficients) => Ok(coefficients),
+        },
     }
 }

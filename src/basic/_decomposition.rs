@@ -1,12 +1,12 @@
-use crate::{eigen, solve};
 use crate::matrix::Matrix;
 use crate::vector::Vector;
+use crate::{eigen, solve};
 
 /// For shift_qr_algorithm
 fn similar_matrix(matrix: &Matrix) -> Result<Matrix, String> {
     match matrix.qr_decomposition() {
         Err(error_msg) => Err(error_msg),
-        Ok(tuple) => Ok(tuple.1.multiply_Matrix(&tuple.0).unwrap())
+        Ok(tuple) => Ok(tuple.1.multiply_Matrix(&tuple.0).unwrap()),
     }
 }
 
@@ -144,7 +144,6 @@ impl Matrix {
 
                 Ok((matrix_l.clone(), matrix_d, matrix_l.transpose()))
             }
-
         }
     }
 
@@ -177,27 +176,52 @@ impl Matrix {
         }
     }
 
+    /// Return the tuple ***(U, Σ, V^T)***
     pub fn singular_value_decomposition(self: &Self) -> Result<(Matrix, Matrix, Matrix), String> {
         let ata: Matrix = self.transpose().multiply_Matrix(self).unwrap();
-        match eigen::eigenvalue_with_qr(&ata, 10000, 1e-32) {
+        match eigen::eigenvalue_with_qr(&ata, 5000, 1e-16) {
             Err(error_msg) => Err(error_msg),
             Ok(tuple) => {
-                // Remove if eigenvalue is 0.
-                let mut eigenvalue: Vec<f64> = Vec::new();  
-                for e in 0..tuple.0.size {
-                    if tuple.0.entries[e] == 0.0 {
-                        break;
-                    }
-                    eigenvalue.push(tuple.0.entries[e]);
-                }
-                
-                let eigenvalue: Vector = Vector::from_vec(&eigenvalue); 
-                for e in 0..eigenvalue.size {
-                    let eigenkernel = Matrix::identity(ata.row).multiply_scalar(&eigenvalue.entries[e]).substract_Matrix(&ata).unwrap();
-                    solve::null_space(&eigenkernel);
+                // Get eigenvalue
+                const THERESHOLD: f64 = 1e-08;
+                let mut eigenvalue: Vector = tuple.0;
+                while eigenvalue.entries[eigenvalue.size - 1].abs() < THERESHOLD {
+                    eigenvalue = eigenvalue.remove(eigenvalue.size - 1).unwrap();
                 }
 
-                Ok((ata.clone(), ata.clone(), ata))
+                // Build V^T
+                let mut vt: Matrix = Matrix::zeros(0, 0);
+                for e in 0..eigenvalue.size {
+                    let eigenvector: Matrix =
+                        eigen::eigenvector(&ata, eigenvalue.entries[e]).unwrap();
+                    for c in 0..eigenvector.col {
+                        vt = vt
+                            .append_Vector(
+                                &eigenvector.get_column_vector(c).unwrap().normalize(),
+                                0,
+                            )
+                            .unwrap();
+                    }
+                }
+
+                // Build U
+                let mut u: Matrix = Matrix::zeros(0, 0);
+                for r in 0..vt.row {
+                    u = u
+                        .append_Vector(
+                            &self
+                                .multiply_Vector(&vt.get_row_vector(r).unwrap())
+                                .unwrap()
+                                .normalize(),
+                            1,
+                        )
+                        .unwrap();
+                }
+
+                // Build Σ
+                let sigma: Matrix = eigenvalue.square_root().to_diagonal();
+
+                Ok((u, sigma, vt))
             }
         }
     }

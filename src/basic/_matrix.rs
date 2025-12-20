@@ -106,10 +106,7 @@ impl Matrix {
 
     pub fn display(self: &Self) {
         if self.row == 0 {
-            println!(
-                "Matrix: [[]], shape: {} x {}",
-                self.row, self.col
-            );
+            println!("Matrix: [[]], shape: {} x {}", self.row, self.col);
             return;
         } else if self.row == 1 {
             println!(
@@ -332,12 +329,12 @@ impl Matrix {
     pub fn append_Vector(self: &Self, vector: &Vector, axis: usize) -> Result<Matrix, String> {
         if self.row == 0 {
             match axis {
-            x if x == 0 => return Ok(vector.to_Matrix(0).unwrap()),
-            x if x == 1 => return Ok(vector.to_Matrix(1).unwrap()),
-            _ => return Err("Input Error: Input axis is not valid.".to_string())
+                x if x == 0 => return Ok(vector.to_Matrix(0).unwrap()),
+                x if x == 1 => return Ok(vector.to_Matrix(1).unwrap()),
+                _ => return Err("Input Error: Input axis is not valid.".to_string()),
             }
         }
-        
+
         match axis {
             x if x == 0 => {
                 if self.col != vector.size {
@@ -385,9 +382,9 @@ impl Matrix {
     pub fn append_Matrix(self: &Self, matrix: &Matrix, axis: usize) -> Result<Matrix, String> {
         if self.row == 0 {
             match axis {
-            x if x == 0 => return Ok(matrix.clone()),
-            x if x == 1 => return Ok(matrix.clone()),
-            _ => return Err("Input Error: Input axis is not valid.".to_string())
+                x if x == 0 => return Ok(matrix.clone()),
+                x if x == 1 => return Ok(matrix.clone()),
+                _ => return Err("Input Error: Input axis is not valid.".to_string()),
             }
         }
 

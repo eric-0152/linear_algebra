@@ -76,6 +76,7 @@ pub fn gauss_jordan_elimination(
     }
 
     // Reduce to upper triangular form.
+    const THERESHOLD: f64 = 1e-8;
     let mut result_matrix: Matrix = matrix.clone();
     let mut result_vector: Vector = b.clone();
     let mut permutation: Matrix = Matrix::identity(matrix.row);
@@ -84,7 +85,7 @@ pub fn gauss_jordan_elimination(
     let mut last_operate: i32 = 0;
     while pivot_row < result_matrix.row && pivot_col < result_matrix.col {
         // If the pivot is 0.0, swap to non zero.
-        if result_matrix.entries[pivot_row][pivot_col] == 0.0 {
+        if result_matrix.entries[pivot_row][pivot_col].abs() < THERESHOLD {
             let mut is_swap = false;
             for r in (pivot_row + 1)..result_matrix.row {
                 if result_matrix.entries[r][pivot_col] != 0.0 {
@@ -103,7 +104,8 @@ pub fn gauss_jordan_elimination(
         }
 
         for r in (pivot_row + 1)..result_matrix.row {
-            let scale: f64 = result_matrix.entries[r][pivot_col] / result_matrix.entries[pivot_row][pivot_col];
+            let scale: f64 =
+                result_matrix.entries[r][pivot_col] / result_matrix.entries[pivot_row][pivot_col];
             result_vector.entries[r] -= scale * result_vector.entries[pivot_row];
             for e in 0..matrix.col {
                 result_matrix.entries[r][e] -= scale * result_matrix.entries[pivot_row][e];
@@ -124,7 +126,11 @@ pub fn gauss_jordan_elimination(
     }
     while pivot_row > 0 {
         for r in 0..pivot_row {
-            let scale: f64 = result_matrix.entries[r][pivot_col] / result_matrix.entries[pivot_row][pivot_col];
+            if result_matrix.entries[pivot_row][pivot_col].abs() < THERESHOLD {
+                continue;
+            }
+            let scale: f64 =
+                result_matrix.entries[r][pivot_col] / result_matrix.entries[pivot_row][pivot_col];
             result_vector.entries[r] -= scale * result_vector.entries[pivot_row];
             for c in pivot_col..result_matrix.col {
                 result_matrix.entries[r][c] -= scale * result_matrix.entries[pivot_row][c];
@@ -153,8 +159,10 @@ pub fn gauss_jordan_elimination(
 }
 
 pub fn null_space(matrix: &Matrix) -> Matrix {
-    let rref: Matrix = gauss_jordan_elimination(matrix, &Vector::zeros(matrix.row)).unwrap().0;
-    
+    let rref: Matrix = gauss_jordan_elimination(matrix, &Vector::zeros(matrix.row))
+        .unwrap()
+        .0;
+
     // Construct the matrix that contains relationship between each pivot and behind element.
     // Each column only contains two element.
     const THERESHOLD: f64 = 1e-8;
@@ -163,11 +171,15 @@ pub fn null_space(matrix: &Matrix) -> Matrix {
         let mut pivot = r;
         while rref.entries[r][pivot].abs() < THERESHOLD {
             pivot += 1;
-            if pivot == rref.col {break}
+            if pivot == rref.col {
+                break;
+            }
         }
-        
+
         for right in (pivot + 1)..rref.col {
-            if rref.entries[r][right].abs() < THERESHOLD {continue}
+            if rref.entries[r][right].abs() < THERESHOLD {
+                continue;
+            }
 
             let mut relate_vector: Vector = Vector::zeros(rref.col);
             relate_vector.entries[pivot] = 1.0;
@@ -190,13 +202,12 @@ pub fn null_space(matrix: &Matrix) -> Matrix {
             } else {
                 null_relate.entries[r][c] /= base_value;
             }
-            
         }
     }
 
     // Combine columns if has the same bottom value.
     let mut null_basis: Matrix = Matrix::zeros(0, 0);
-    for r in (0.. null_relate.row).rev() {
+    for r in (0..null_relate.row).rev() {
         let mut null_vector = Vector::zeros(rref.col);
         null_vector.entries[r] = 1.0;
         for c in 0..null_relate.col {
@@ -223,11 +234,14 @@ pub fn null_space(matrix: &Matrix) -> Matrix {
     }
 
     // Complete the eigenvector
-    for c in 0.. rref.col {
+    for c in 0..rref.col {
         let mut zero_num: usize = 0;
-        for r in 0.. rref.row {
-            if rref.entries[r][c] == 0.0 {zero_num += 1}
-            else {break;}
+        for r in 0..rref.row {
+            if rref.entries[r][c] == 0.0 {
+                zero_num += 1
+            } else {
+                break;
+            }
         }
         if zero_num == rref.col {
             let mut zero_vector = Vector::zeros(rref.col);
@@ -236,7 +250,9 @@ pub fn null_space(matrix: &Matrix) -> Matrix {
         }
     }
     if null_basis.row == 0 {
-        null_basis = null_basis.append_Vector(&Vector::zeros(rref.col), 1).unwrap();
+        null_basis = null_basis
+            .append_Vector(&Vector::zeros(rref.col), 1)
+            .unwrap();
     }
 
     null_basis

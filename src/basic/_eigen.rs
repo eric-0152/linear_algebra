@@ -26,11 +26,9 @@ pub fn similar_matrix(matrix: &Matrix) -> Result<Matrix, String> {
     if matrix.row != matrix.col {
         return Err("Input Error: The matrix is not square.".to_string());
     }
-    
+
     match matrix.qr_decomposition() {
-        Ok(tuple) => {
-            Ok(tuple.1.multiply_Matrix(&tuple.0).unwrap())
-        }
+        Ok(tuple) => Ok(tuple.1.multiply_Matrix(&tuple.0).unwrap()),
         Err(error_msg) => Err(error_msg),
     }
 }
@@ -48,7 +46,6 @@ pub fn shift_qr_algorithm(
             let mut last_eigenvalue: f64 = matrix_s.entries[last_row_idx][last_col_idx];
             let mut difference: f64 = 1.0;
             let mut step: u32 = 0;
-
             while difference > error_thershold && step < max_iter {
                 let shift = Matrix::identity(matrix_size).multiply_scalar(&last_eigenvalue);
                 matrix_s = matrix_s.substract_Matrix(&shift).unwrap();
@@ -91,19 +88,19 @@ pub fn eigenvalue_with_qr(
 
                 Ok((Vector::from_vec(&eigenvalue), difference))
             }
-        }
+        },
     }
 }
 
 /// ## Can not return complex eigenvector
-pub fn eigenvector(
-    matrix: &Matrix,
-    eigen_value: f64,
-) -> Result<Matrix, String> {
+pub fn eigenvector(matrix: &Matrix, eigen_value: f64) -> Result<Matrix, String> {
     if matrix.row != matrix.col {
         return Err("Input Error: The input matrix is not square.".to_string());
     }
-    let eigen_kernel = Matrix::identity(matrix.row).multiply_scalar(&eigen_value).substract_Matrix(&matrix.clone()).unwrap();
-    
+    let eigen_kernel = Matrix::identity(matrix.row)
+        .multiply_scalar(&eigen_value)
+        .substract_Matrix(&matrix.clone())
+        .unwrap();
+
     Ok(solve::null_space(&eigen_kernel))
 }

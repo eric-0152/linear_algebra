@@ -40,7 +40,6 @@ impl Vector {
         for e in 0..result_vector.size {
             if result_vector.entries[e].is_nan() {
                 result_vector.entries[e] = 0.0;
-            
             }
         }
 
@@ -208,7 +207,7 @@ impl Vector {
 
         let mut entrie_vec: Vec<f64> = self.entries.clone();
         entrie_vec.remove(index);
-        
+
         Ok(Vector::from_vec(&entrie_vec))
     }
 
