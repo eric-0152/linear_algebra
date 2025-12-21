@@ -182,26 +182,9 @@ pub fn null_space(matrix: &Matrix) -> Matrix {
             }
 
             let mut relate_vector: Vector = Vector::zeros(rref.col);
-            relate_vector.entries[pivot] = 1.0;
-            relate_vector.entries[right] = -1.0 / rref.entries[r][right];
+            relate_vector.entries[pivot] = -1.0 * rref.entries[r][right];
+            relate_vector.entries[right] = 1.0;
             null_relate = null_relate.append_Vector(&relate_vector, 1).unwrap();
-        }
-    }
-
-    // Each column divide by the bottom value.
-    for c in 0..null_relate.col {
-        let mut find_base: bool = false;
-        let mut base_value: f64 = 0.0;
-        for r in (0..null_relate.row).rev() {
-            if null_relate.entries[r][c] == 0.0 {
-                continue;
-            } else if !find_base {
-                base_value = null_relate.entries[r][c];
-                null_relate.entries[r][c] = 1.0;
-                find_base = true;
-            } else {
-                null_relate.entries[r][c] /= base_value;
-            }
         }
     }
 
