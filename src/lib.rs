@@ -6,12 +6,16 @@ pub mod eigen;
 pub mod io;
 #[path = "basic/_matrix.rs"]
 pub mod matrix;
+#[path = "basic/_vector.rs"]
+pub mod vector;
 #[path = "basic/_process.rs"]
 pub mod process;
 #[path = "basic/_solve.rs"]
 pub mod solve;
 #[path = "basic/_transform.rs"]
 pub mod transform;
+#[path = "basic/_polynomial.rs"]
+pub mod polynomial;
 
 #[path = "optimize/_mcmc.rs"]
 pub mod mcmc;

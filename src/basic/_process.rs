@@ -1,8 +1,8 @@
+use crate::{matrix::Matrix, vector::Vector};
 use num_complex::Complex64;
-use crate::matrix::Matrix;
 
 impl Matrix {
-    // / Return the matrix which contains orthonormal basis.
+    /// ### Return a matrix which contains orthonormal basis.
     pub fn gram_schmidt(self: &Self) -> Result<Matrix, String> {
         if self.shape.0 == 0 {
             return Err("Value Error: This matrix has no column.".to_string());
@@ -13,20 +13,27 @@ impl Matrix {
             matrix = matrix.transpose();
         } 
 
-        let mut current_col: Matrix = matrix.get_column_vector(0)?;
-        let mut orthonormal_matrix: Matrix = &current_col * &(1.0 / current_col.euclidean_distance()?);
-
+        let mut current_col: Vector = matrix.get_column_vector(0)?;
+        let mut orthogonal_matrix: Matrix = current_col.as_matrix();
         for c in 1..matrix.shape.1 {
             current_col = matrix.get_column_vector(c)?;
-            let mut new_orthonormal: Matrix = current_col.clone();
+            let mut new_orthogonal: Vector = current_col.clone();
             for pre_c in 0..c {
-                let previous_orthonormal: Matrix = orthonormal_matrix.get_column_vector(pre_c)?;
-                let dot_product: Complex64 = (&previous_orthonormal.transpose() * &current_col).entries[0][0];
-                new_orthonormal = &new_orthonormal - &(&previous_orthonormal * &dot_product);
+                let previous_orthogonal: Vector = orthogonal_matrix.get_column_vector(pre_c)?;
+                let norm: f64 = previous_orthogonal.norm();
+                let coefficient: Complex64 = previous_orthogonal.inner_product(&current_col)? / norm.powi(2);
+                new_orthogonal = &new_orthogonal - &(&previous_orthogonal * coefficient);
             }
 
-            new_orthonormal = &new_orthonormal * &(1.0 / new_orthonormal.euclidean_distance()?);
-            orthonormal_matrix = orthonormal_matrix.append(&new_orthonormal, 1)?;
+            orthogonal_matrix = orthogonal_matrix.append_vector(&new_orthogonal, 1)?;
+        }
+        
+        
+        let mut orthonormal_matrix: Matrix = Matrix::zeros(0, 0);
+        for c in 0..orthogonal_matrix.shape.1 {
+            let column: Vector = orthogonal_matrix.get_column_vector(c).unwrap();
+            let norm: f64 = column.norm();
+            orthonormal_matrix = orthonormal_matrix.append_vector(&(&column / norm), 1)?;
         }
 
         Ok(orthonormal_matrix)

@@ -2,22 +2,19 @@ use num_complex::Complex64;
 
 use crate::matrix::Matrix;
 use crate::eigen;
+use crate::vector::Vector;
 
 impl Matrix {
-    /// Return a tuple (***L, U, P***).
-    ///  
-    /// <br>
+    /// ### *LU* Decomposition :
+    /// &emsp; ***A = LU***.
     ///
-    /// ### *LU* Decomposition:
-    /// &emsp; ***A = LU***, ***L*** is lower triagular, and ***U*** is upper triangular.
-    ///
-    /// <br>
-    ///
-    /// The algorithm will swap rows if needed (diagnal has 0), if the order of rows is
-    /// important, use swap_with_permutation() with P to yield the correct order:
-    ///
-    /// &emsp; ***A = (LU).swap_with_permutation(P)***
-    pub fn lu_decomposition(self: &Self) -> (Matrix, Matrix, Matrix) {
+    /// ### Return a tuple (***L, U, P***) :
+    /// &emsp; ***L*** : Lower triangular matrix. 
+    /// 
+    /// &emsp; ***U*** : Upper triangular matrix.
+    /// 
+    /// &emsp; ***P*** : Permutation matrix.
+    pub fn lu(self: &Self) -> (Matrix, Matrix, Matrix) {
         let mut matrix_u: Matrix = self.clone();
         let mut matrix_l: Matrix = Matrix::zeros(self.shape.0, self.shape.0);
         let mut permutation: Matrix = Matrix::identity(self.shape.0);
@@ -52,25 +49,19 @@ impl Matrix {
         (matrix_l, matrix_u, permutation)
     }
 
-    /// Return a tuple (***L, D, V, P***).
+    /// ### *LDV* Decomposition :
+    /// &emsp; ***A = LDV***.  
     ///
-    /// <br>
-    ///
-    /// ### *LDV* Decomposition:
-    /// &emsp; ***A = LDV***, ***L*** is lower triagular, ***D*** is diagonal, and ***V***
-    /// is upper triangular.  
-    ///
-    /// <br>
-    ///
-    /// The algorithm will swap rows if needed (diagnal has 0), if the order of rows is     
-    /// important, use swap_with_permutation() with P to yield the correct order:
-    ///
-    /// &emsp; ***A = LDV.swap_with_permutation(***P***)
-    pub fn ldv_decomposition(self: &Self) -> Result<(Matrix, Matrix, Matrix, Matrix), String> {
-        let tuple = self.lu_decomposition();
-        let matrix_l: Matrix = tuple.0;
-        let matrix_u: Matrix = tuple.1;
-        let permutation: Matrix = tuple.2;
+    /// ### Return a tuple (***L, D, V, P***) :
+    /// &emsp; ***L*** : Lower triangular matrix.
+    ///  
+    /// &emsp; ***D*** : Diagonal matrix.
+    ///  
+    /// &emsp; ***V*** : Upper triangular matrix.
+    ///  
+    /// &emsp; ***P*** : Permutation matrix.
+    pub fn ldv(self: &Self) -> Result<(Matrix, Matrix, Matrix, Matrix), String> {
+        let (matrix_l, matrix_u, permutation) = self.lu();
         let mut matrix_d: Matrix = Matrix::identity(self.shape.0);
         for d in 0..self.shape.0.min(self.shape.1) {
             matrix_d.entries[d][d] = matrix_u.entries[d][d];
@@ -85,10 +76,13 @@ impl Matrix {
         }
     }
 
-    /// Return a tuple (***L, L^T***).
-    ///
-    /// ### Cholesky Decomposition:
-    /// &nbsp; ***A = LL^T***.
+    /// ### Cholesky Decomposition :
+    /// &emsp; ***A = LL^T***.
+    /// 
+    /// ### Return a tuple (***L, L^T***) :
+    /// &emsp; ***L*** : Lower triangular matrix.
+    /// 
+    /// &emsp; ***L^T*** : Transpose of ***L***.
     pub fn cholesky_decomposition(self: &Self) -> Result<(Matrix, Matrix), String> {
         if !self.is_positive_definite() {
             return Err("Value Error: This matrix is not a positive definite matrix.".to_string());
@@ -116,12 +110,17 @@ impl Matrix {
         Ok((matrix_l.clone(), matrix_l.transpose()))
     }
 
-    /// Return a tuple (***L, D, L^T***).
-    ///
-    /// ### ***LDLT*** Decomposition:
-    /// &nbsp; ***A = CC^T*** (from Cholesky decomposition) = ***LD^(1/2) @ (LD^(1/2))^T***
+    /// ### ***LDLT*** Decomposition :
+    /// &emsp; ***A = CC^T*** (from Cholesky decomposition) = ***LD^(1/2) @ (LD^(1/2))^T***
     /// = ***L @ D^(1/2)^2 @ L^T = LDL^T***.
-    pub fn ldlt_decomposition(self: &Self) -> Result<(Matrix, Matrix, Matrix), String> {
+    /// 
+    /// ### Return a tuple (***L, D, L^T***) :
+    /// &emsp; ***L*** : Lower triangular matrix.
+    /// 
+    /// &emsp; ***D*** : Diagonal matrix.
+    /// 
+    /// &emsp; ***L^T*** : Transpose of the lower triangular matrix.
+    pub fn ldlt(self: &Self) -> Result<(Matrix, Matrix, Matrix), String> {
         match self.cholesky_decomposition() {
             Err(error_msg) => Err(error_msg),
             Ok((matrix_c, _)) => {
@@ -140,15 +139,14 @@ impl Matrix {
         }
     }
 
-    /// Return a tuple (***Q, R***).
-    ///
-    /// <br>
-    ///
-    /// ### *QR* Decomposition:
-    /// &emsp; ***A = QR***, ***Q*** is a matrix contains orthonormal basis
-    /// , from doing ***Gram Schmidt*** process. ***R*** is a upper triangular
-    /// matrix contains inner products with ***A***.
-    pub fn qr_decomposition(self: &Self) -> Result<(Matrix, Matrix), String> {
+    /// ### *QR* Decomposition :
+    /// &emsp; ***A = QR***, ***Q***.
+    /// 
+    /// ### Return a tuple (***Q, R***) :
+    /// &emsp; ***Q*** : Orthornormal matrix.
+    /// 
+    /// &emsp; ***R*** : Upper triangular matrix.
+    pub fn qr(self: &Self) -> Result<(Matrix, Matrix), String> {
         match self.gram_schmidt() {
             Err(error_msg) => Err(error_msg),
             Ok(mut matrix_q) => {
@@ -161,12 +159,12 @@ impl Matrix {
 
                 let mut matrix_r: Matrix = Matrix::zeros(matrix.shape.1, matrix.shape.1);
                 for r in 0..matrix_r.shape.0 {
-                    let orthonormal_col: Matrix = matrix_q.get_column_vector(r)?;
+                    let orthonormal_col: Vector = matrix_q.get_column_vector(r)?;
                     for c in r..matrix_r.shape.1 {
-                        matrix_r.entries[r][c] = (&matrix.get_column_vector(c)?.transpose() * &orthonormal_col).entries[0][0];
+                        matrix_r.entries[r][c] = matrix.get_column_vector(c)?.inner_product(&orthonormal_col)?;
                     }
                 }
-
+                
                 if has_transpose {
                     let tmp: Matrix = matrix_q.transpose();
                     matrix_q = matrix_r.transpose();
@@ -178,32 +176,33 @@ impl Matrix {
         }
     }
 
-    /// ## NEET TO FIX
-    /// Return the tuple ***(U, Σ, V^T)***
-    pub fn singular_value_decomposition(self: &Self) -> Result<(Matrix, Matrix, Matrix), String> {
+    /// ### Singular Value Decomposition :
+    /// &emsp; ***A = U, Σ, V^T***
+    /// 
+    /// ### Return a tuple ***(U, Σ, V^T)*** :
+    /// &emsp; ***U*** : Orthornormal matrix.
+    /// 
+    /// &emsp; ***Σ*** : Diagonal matrix contains singular values.
+    /// 
+    /// &emsp; ***V^T*** : Orthornormal matrix.
+    pub fn svd(self: &Self) -> Result<(Matrix, Matrix, Matrix), String> {
         let ata: Matrix = &self.transpose() * self;
         match eigen::eigenvalue(&ata, 2000, 1e-16) {
             Err(error_msg) => Err(error_msg),
             Ok((mut eigenvalue, _)) => {
                 // Get eigenvalue
                 const THERESHOLD: f64 = 1e-08;
-                for e in (0..eigenvalue.shape.0).rev() {
-                    if eigenvalue.entries[e][0].re.abs() < THERESHOLD && eigenvalue.entries[e][0].im.abs() < THERESHOLD {
-                        eigenvalue = eigenvalue.remove_row(e)?;
+                for e in (0..eigenvalue.size).rev() {
+                    if eigenvalue.entries[e].re.abs() < THERESHOLD && eigenvalue.entries[e].im.abs() < THERESHOLD {
+                        eigenvalue = eigenvalue.remove_element(e)?;
                     }
                 }
 
                 let mut vt: Matrix = Matrix::zeros(0, 0);
-                for e in 0..eigenvalue.shape.0 {
-                    let eigenvector: Matrix = eigen::eigenvector(&ata, eigenvalue.entries[e][0])?;
+                for e in 0..eigenvalue.size {
+                    let eigenvector: Matrix = eigen::eigenvector(&ata, eigenvalue.entries[e])?;
                     for c in 0..eigenvector.shape.1 {
-                        vt = vt
-                            .append(
-                                &eigenvector.get_column_vector(c)?.normalize(),
-                                1,
-                            )
-                            ?;
-
+                        vt = vt.append_vector(&eigenvector.get_column_vector(c)?.normalize(), 1)?;
                     }
                 }
 
@@ -214,7 +213,7 @@ impl Matrix {
                 let mut u: Matrix = Matrix::zeros(0, 0);
                 for r in 0..vt.shape.0 {
                     u = u
-                        .append(&(&(self * &vt.get_column_vector(r)?) * (&(1.0_f64 / sigma.entries[r][r]))), 1,)
+                        .append_vector(&(&(self * &vt.get_column_vector(r)?) / sigma.entries[r][r]), 1,)
                         ?;
                 }
 
