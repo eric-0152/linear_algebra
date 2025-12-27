@@ -96,7 +96,16 @@ impl Polynomial {
 
         (p1, p2)
     }
-
+    #[inline]
+    pub fn round(self: &Self, digit: usize) -> Polynomial {
+        let mut result_poly: Polynomial = 10.0_f64.powi(digit as i32) * self;
+        for coeff in &mut result_poly.coeff {
+            coeff.re = coeff.re.round();
+            coeff.im = coeff.im.round();
+        }
+        
+        &result_poly / 10.0_f64.powi(digit as i32)
+    }
     #[inline]
     pub fn remove_redundant(self: &Self) -> Polynomial {
         let mut result_poly: Polynomial = self.clone();
@@ -186,9 +195,11 @@ fn newton_raphson(poly: &Polynomial) -> Result<Complex64, String> {
     let real_partial_y: MultiPoly = real_poly.partial_derivative("y".to_string()).unwrap();
     let img_partial_x: MultiPoly = img_poly.partial_derivative("x".to_string()).unwrap();
     let img_partial_y: MultiPoly = img_poly.partial_derivative("y".to_string()).unwrap();
-    let mut param = Vector::random_vector(2, -1000.0, 1000.0, false);
-    const THRESHOLD: f64 = 1e-10;
-    const MAX_ITER: u32 = 100000000;
+    let mut param = Vector::random_vector(2, -10000.0, 10000.0, false);
+    const THRESHOLD: f64 = 1e-12;
+    const MAX_ITER: u32 = 1000;
+    let mut learning_rate = 1.0;
+    let d_lr = (1.0 - 0.00001) / MAX_ITER as f64; 
     let mut error: f64 = 1.0;
     let mut iter: u32 = 0;
     while error > THRESHOLD && iter < MAX_ITER {
@@ -201,8 +212,9 @@ fn newton_raphson(poly: &Polynomial) -> Result<Complex64, String> {
         let denominator: f64 = (real_dx * img_dy) - (real_dy * real_dx);
         let dx: f64 = ((real * img_dy) - (real_dy * img)) / denominator;  
         let dy: f64 = ((real_dx * img) - (real * img_dx)) / denominator;  
-        param.entries[0].re -= 0.9 * dx;
-        param.entries[1].re -= 0.9 * dy;
+        param.entries[0].re -= learning_rate * dx;
+        param.entries[1].re -= learning_rate * dy;
+        learning_rate -= d_lr;
         error = (&poly.evaluate(&Complex64::new(param.entries[0].re, param.entries[1].re)).re).abs();
         if error.is_nan() {
             return Err("Failed to converge".to_string());
@@ -231,6 +243,8 @@ pub fn find_root(poly: &Polynomial) -> Vector {
         let mut new_root = find_result.unwrap();
         if !new_root.is_infinite() && !new_root.is_nan() {
             roots = roots.append(&Vector { size: 1, entries: vec![new_root] });
+            new_root.re = (new_root.re * 10.0_f64.powi(10)).round() / 10.0_f64.powi(10);
+            new_root.im = (new_root.im * 10.0_f64.powi(10)).round() / 10.0_f64.powi(10);
             let (quotient, remainder) = current_poly.divide_by(&Polynomial::new(&vec![-new_root, Complex64::ONE]));
             current_poly = quotient;
             last_residual = remainder.coeff[0];
